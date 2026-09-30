@@ -1,0 +1,113 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Role check from user profile
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isProfessional() {
+      return isSignedIn() && (
+        getUserData().role == 'counsellor' || 
+        getUserData().role == 'admin'
+      );
+    }
+
+    function isAdmin() {
+      return isSignedIn() && getUserData().role == 'admin';
+    }
+
+    // User profiles
+    match /users/{userId} {
+      allow get: if isSignedIn() && (isOwner(userId) || isProfessional());
+      allow list: if isProfessional();
+      allow create: if isSignedIn() && isOwner(userId) && 
+        request.resource.data.keys().hasAll(['uid', 'email', 'role', 'createdAt']) &&
+        request.resource.data.uid == request.auth.uid &&
+        request.resource.data.role in ['victim', 'counsellor', 'admin'];
+      allow update: if isSignedIn() && (
+        (isOwner(userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'updatedAt'])) ||
+        isAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Cases collection
+    match /cases/{caseId} {
+      allow get: if isSignedIn() && (
+        isProfessional() || 
+        (resource.data.victimUid == request.auth.uid)
+      );
+      allow list: if isProfessional();
+      allow create: if isProfessional();
+      allow update: if isProfessional();
+      allow delete: if isAdmin();
+    }
+
+    // Check-ins collection
+    match /checkIns/{checkInId} {
+      allow get: if isSignedIn() && (
+        isProfessional() || 
+        (resource.data.userId == request.auth.uid)
+      );
+      allow list: if isSignedIn() && (
+        isProfessional() || 
+        (resource.data.userId == request.auth.uid)
+      );
+      allow create: if isSignedIn() && (
+        request.resource.data.userId == request.auth.uid ||
+        isProfessional()
+      );
+      allow update: if isProfessional();
+      allow delete: if isAdmin();
+    }
+
+    // Alerts collection
+    match /alerts/{alertId} {
+      allow read: if isProfessional();
+      allow create, update: if isProfessional();
+      allow delete: if isAdmin();
+    }
+
+    // Interventions collection
+    match /interventions/{interventionId} {
+      allow read: if isProfessional();
+      allow create, update: if isProfessional();
+      allow delete: if isAdmin();
+    }
+
+    // Timeline events
+    match /caseTimeline/{eventId} {
+      allow read: if isSignedIn() && (
+        isProfessional() || 
+        get(/databases/$(database)/documents/cases/$(resource.data.caseId)).data.victimUid == request.auth.uid
+      );
+      allow create, update: if isProfessional();
+      allow delete: if isAdmin();
+    }
+
+    // Audit logs (append-only)
+    match /auditLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isSignedIn();
+      allow update, delete: if false;
+    }
+  }
+}

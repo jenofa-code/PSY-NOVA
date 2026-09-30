@@ -1,0 +1,157 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with role-based access for victims, counsellors, and administrators",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "format": "email", "maxLength": 128 },
+        "displayName": { "type": "string", "maxLength": 100 },
+        "role": { "type": "string", "enum": ["victim", "counsellor", "admin"] },
+        "caseId": { "type": "string", "maxLength": 64 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role", "createdAt"]
+    },
+    "CaseRecord": {
+      "title": "CaseRecord",
+      "description": "Anonymized atrocity victim case tracking record",
+      "type": "object",
+      "properties": {
+        "caseId": { "type": "string", "maxLength": 64 },
+        "victimUid": { "type": "string", "maxLength": 128 },
+        "district": { "type": "string", "maxLength": 64 },
+        "state": { "type": "string", "maxLength": 64 },
+        "status": { "type": "string", "enum": ["active", "monitored", "escalated", "resolved"] },
+        "currentDistressScore": { "type": "number" },
+        "riskLevel": { "type": "string", "enum": ["low", "moderate", "high", "critical"] },
+        "trajectory": { "type": "string", "enum": ["improving", "stable", "worsening", "rapidly_worsening"] },
+        "escalationRisk": { "type": "string", "enum": ["low", "moderate", "high"] },
+        "lastCheckInAt": { "type": "string", "format": "date-time" },
+        "assignedCounsellorId": { "type": "string", "maxLength": 128 },
+        "followUpDue": { "type": "string", "format": "date" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["caseId", "status", "riskLevel", "createdAt"]
+    },
+    "CheckIn": {
+      "title": "CheckIn",
+      "description": "Periodic psychological check-in submitted by victim",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "caseId": { "type": "string", "maxLength": 64 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "emotionalState": { "type": "string", "maxLength": 32 },
+        "questionnaireResponses": { "type": "object" },
+        "textResponse": { "type": "string", "maxLength": 2000 },
+        "voiceRecorded": { "type": "boolean" },
+        "voiceAcousticScore": { "type": "number" },
+        "engagementSignals": { "type": "object" },
+        "distressScore": { "type": "number" },
+        "riskLevel": { "type": "string", "maxLength": 32 },
+        "trajectory": { "type": "string", "maxLength": 32 },
+        "escalationRisk": { "type": "string", "maxLength": 32 },
+        "contributingSignals": { "type": "array" }
+      },
+      "required": ["id", "caseId", "userId", "timestamp", "emotionalState", "distressScore"]
+    },
+    "AlertRecord": {
+      "title": "AlertRecord",
+      "description": "Early warning distress alert for human professional review",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "caseId": { "type": "string", "maxLength": 64 },
+        "severity": { "type": "string", "enum": ["moderate", "high", "critical"] },
+        "status": { "type": "string", "enum": ["open", "under_review", "resolved", "escalated"] },
+        "reason": { "type": "string", "maxLength": 500 },
+        "signals": { "type": "array" },
+        "recommendedAction": { "type": "string", "maxLength": 256 },
+        "acknowledgedBy": { "type": "string", "maxLength": 128 },
+        "acknowledgedAt": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "caseId", "severity", "status", "reason", "createdAt"]
+    },
+    "InterventionRecord": {
+      "title": "InterventionRecord",
+      "description": "Human-in-the-loop referral and support pathway action",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "caseId": { "type": "string", "maxLength": 64 },
+        "type": { "type": "string", "enum": ["counselling", "legal_aid", "financial_aid", "protection_review", "case_note"] },
+        "notes": { "type": "string", "maxLength": 2000 },
+        "officerId": { "type": "string", "maxLength": 128 },
+        "officerName": { "type": "string", "maxLength": 128 },
+        "status": { "type": "string", "enum": ["scheduled", "in_progress", "completed", "cancelled"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "caseId", "type", "officerId", "createdAt"]
+    },
+    "TimelineEvent": {
+      "title": "TimelineEvent",
+      "description": "Milestone event in victim case trajectory",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "caseId": { "type": "string", "maxLength": 64 },
+        "type": { "type": "string", "maxLength": 64 },
+        "title": { "type": "string", "maxLength": 128 },
+        "description": { "type": "string", "maxLength": 500 },
+        "distressImpact": { "type": "number" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "caseId", "type", "title", "timestamp"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Security and access audit log for compliance with privacy laws",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "actorId": { "type": "string", "maxLength": 128 },
+        "actorRole": { "type": "string", "maxLength": 32 },
+        "action": { "type": "string", "maxLength": 64 },
+        "targetCaseId": { "type": "string", "maxLength": 64 },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "actorId", "action", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "User profiles with role definitions"
+    },
+    "/cases/{caseId}": {
+      "schema": { "$ref": "#/entities/CaseRecord" },
+      "description": "Anonymized case files for atrocity victims"
+    },
+    "/checkIns/{checkInId}": {
+      "schema": { "$ref": "#/entities/CheckIn" },
+      "description": "Victim check-in assessments"
+    },
+    "/alerts/{alertId}": {
+      "schema": { "$ref": "#/entities/AlertRecord" },
+      "description": "AI-detected early warning alerts"
+    },
+    "/interventions/{interventionId}": {
+      "schema": { "$ref": "#/entities/InterventionRecord" },
+      "description": "Human professional support actions"
+    },
+    "/caseTimeline/{eventId}": {
+      "schema": { "$ref": "#/entities/TimelineEvent" },
+      "description": "Case milestone timeline"
+    },
+    "/auditLogs/{logId}": {
+      "schema": { "$ref": "#/entities/AuditLog" },
+      "description": "Privacy and access audit logs"
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "PSYNOVA",
+  "description": "AI-Powered Dynamic Mental Health Monitoring and Distress Prediction System for Victims of Atrocities",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
